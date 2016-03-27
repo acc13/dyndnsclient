@@ -14,6 +14,7 @@ public class DynDNSClient {
 	
 	public static void main(String[] args) throws InterruptedException 
 	{
+		//handle args
 		String domainName = null;
 		int frequencyInMins = 30;	//default
 		
@@ -43,16 +44,34 @@ public class DynDNSClient {
 			usage();
 		}
 		
+		String lastIP = null;	//cached old IP
 		while (true)
 		{
 			String myIP = getWanIp();
 			if (null == myIP)
 			{
-				logger.error("Failed to retrieve WAN IP.  Aborting.");
+				logger.error("Failed to retrieve WAN IP.");
+			}			
+			else if (myIP.equals(lastIP))
+			{
+				logger.info("WAN IP unchanged.  Skipping update.");
 			}
+			else
+			{
+				if (lastIP != null)	//we have a  saved IP
+				{
+					logger.info("WAN IP changed from " + lastIP + " to " + myIP);
+				}
+				else
+				{
+					logger.info("WAN IP is " + myIP);
+				}
 				
-			IDNSManagementClient dnsClient = new AWSRoute53Client();
-			dnsClient.synchronizeResourceRecord(domainName, myIP);
+				lastIP = myIP;	//cache
+				
+				IDNSManagementClient dnsClient = new AWSRoute53Client();
+				dnsClient.synchronizeResourceRecord(domainName, myIP);
+			}
 			
 			Thread.sleep(frequencyInMins * 1000 * 60);
 		}
@@ -64,24 +83,32 @@ public class DynDNSClient {
 		System.exit(1);
 	}
 	
-	public static String getWanIp() {
+	public static String getWanIp() 
+	{
 		BufferedReader in = null;
         String retVal = null;
 
-        try {
+        try
+        {
         	URL ipAdress = new URL("http://checkip.amazonaws.com");
             in = new BufferedReader(new InputStreamReader(ipAdress.openStream()));
             retVal = in.readLine();
-            logger.info("My wan IP " + retVal);
-        } catch (IOException e) {
+        } 
+        catch (IOException e) 
+        {
             logger.error(e);
         }
-        finally {
+        finally 
+        {
         
-            if (in != null) {
-                try {
+            if (in != null) 
+            {
+                try 
+                {
                     in.close();
-                } catch (IOException e) {
+                } 
+                catch (IOException e) 
+                {
                 	logger.error(e);
                 }
             }
