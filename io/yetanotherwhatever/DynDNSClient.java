@@ -79,7 +79,7 @@ public class DynDNSClient {
 	
 	private static void usage()
 	{
-		System.out.println("Usage: " + DynDNSClient.class.getName() + " -dn <DOMAIN NAME> [-f <FREQUENCY>]");
+		System.out.println("Usage: " + DynDNSClient.class.getName() + " -d <DOMAIN NAME> [-f <FREQUENCY>]");
 		System.exit(1);
 	}
 	

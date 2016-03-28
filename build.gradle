@@ -1,0 +1,42 @@
+apply plugin: 'java'
+apply plugin: 'java-library-distribution'
+
+archivesBaseName = 'DynDNSClient'
+
+sourceSets {
+	main {
+		java {
+			srcDir '.'
+		}
+	}
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.5'
+  compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.5'
+  compile group: 'com.amazonaws', name: 'aws-java-sdk', version: '1.10.64'
+}
+
+
+// Task "distZip" added by plugin "java-library-distribution":
+distZip.shouldRunAfter(build)
+
+distributions {
+    main {
+        baseName = archivesBaseName
+    }
+}
+	
+jar {
+    // Keep jar clean:
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+
+    manifest {
+        attributes 'Main-Class': 'io.yetanotherwhatever.DynDNSClient',
+                   'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
+    }
+}
