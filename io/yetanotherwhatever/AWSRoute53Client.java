@@ -81,7 +81,8 @@ public class AWSRoute53Client implements IDNSManagementClient {
 
 		if (null == hostedZoneId)
 		{
-			logger.warn("Hosted zone " + name + " not found.");			
+			logger.warn("Hosted zone " + name + " not found.");
+			//we don't create on failure, since hosted zones cost money
 		}
 		
 		return hostedZoneId;
@@ -104,7 +105,7 @@ public class AWSRoute53Client implements IDNSManagementClient {
 		//extract second level domain
 		int indexTLD = recordName.lastIndexOf('.', recordName.length() - 2);	//ignore root level "dot" domain
 		int indexSecondLD = recordName.lastIndexOf('.', indexTLD-1);
-		String zoneName = (-1 == indexSecondLD)? recordName: recordName.substring(indexSecondLD);
+		String zoneName = (-1 == indexSecondLD)? recordName: recordName.substring(indexSecondLD+1);
 		
 		// Find the corresponding resource
 		String hzID = getHostedZoneIdByName(zoneName);
@@ -126,28 +127,38 @@ public class AWSRoute53Client implements IDNSManagementClient {
 			if (rrs.getName().equals(recordName) && rrs.getType().equals("A"))
 			{
 				updateRRS = rrs;
-				List<ResourceRecord> rrList = rrs.getResourceRecords();
-				
-				//check values for our ip
-				for (ResourceRecord rr : rrList)
-				{
-					if (rr.getValue().equals(ip))
-					{
-						//we're in sync - no need to proceed
-						logger.info("A record for " + recordName + " already set to " + ip + ".  No update necessary.");
-						return;
-					}
-					logger.debug("Resource record value " + rr);
-					updateRR = rr;
-				}
 				break;
 			}
 		}
 		
 		if (null == updateRRS)
 		{
-			logger.error("Resource record set " + recordName + " not found.");
-			return;
+			logger.warn("Resource record set " + recordName + " not found.");
+			
+			updateRRS = new ResourceRecordSet();
+			updateRRS.setName(recordName);
+			updateRRS.setType("A");
+			updateRRS.setTTL(300L);
+			
+			//add an empty resource record
+			ResourceRecord rr = new ResourceRecord(); 
+			List<ResourceRecord> rrList = Arrays.asList(rr);
+			updateRRS.setResourceRecords(rrList);
+		}
+
+		List<ResourceRecord> rrList = updateRRS.getResourceRecords();
+		
+		//check values for our ip
+		for (ResourceRecord rr : rrList)
+		{
+			if ( rr.getValue() != null && rr.getValue().equals(ip))
+			{
+				//we're in sync - no need to proceed
+				logger.info("A record for " + recordName + " already set to " + ip + ".  No update necessary.");
+				return;
+			}
+			logger.debug("Resource record value " + rr);
+			updateRR = rr;	//we expect one record
 		}
 		
 		if (null == updateRR)

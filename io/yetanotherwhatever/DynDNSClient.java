@@ -12,17 +12,20 @@ public class DynDNSClient {
 
 	private static final Logger logger = LogManager.getLogger(DynDNSClient.class);
 	
+	private static String m_testip = null;
+	
 	public static void main(String[] args) throws InterruptedException 
 	{
 		//handle args
-		String domainName = null;
+		String domainNamesArg = null;
 		int frequencyInMins = 30;	//default
+		
 		
 		for (int i = 0; i < args.length; i++)
 		{
 			if (args[i].equals("-d") && i < args.length)
 			{
-				domainName = args[i+1];
+				domainNamesArg = args[i+1];
 			}
 			
 			if (args[i].equals("-f") && i < args.length)
@@ -37,12 +40,21 @@ public class DynDNSClient {
 					usage();
 				}
 			}
+			
+			//for testing, so not printed by usage()
+			if (args[i].equals("-i") && i < args.length)
+			{
+				m_testip = args[i+1];
+			}
 		}
 		
-		if(null == domainName)
+		if(null == domainNamesArg)
 		{
 			usage();
 		}
+		
+		String[] domainNames = domainNamesArg.split(";");
+		
 		
 		String lastIP = null;	//cached old IP
 		while (true)
@@ -70,7 +82,10 @@ public class DynDNSClient {
 				lastIP = myIP;	//cache
 				
 				IDNSManagementClient dnsClient = new AWSRoute53Client();
-				dnsClient.synchronizeResourceRecord(domainName, myIP);
+				for (String dn : domainNames)
+				{
+					dnsClient.synchronizeResourceRecord(dn, myIP);
+				}
 			}
 			
 			Thread.sleep(frequencyInMins * 1000 * 60);
@@ -79,12 +94,15 @@ public class DynDNSClient {
 	
 	private static void usage()
 	{
-		System.out.println("Usage: " + DynDNSClient.class.getName() + " -d <DOMAIN NAME> [-f <FREQUENCY>]");
+		System.out.println("Usage: " + DynDNSClient.class.getName() + " -d <DOMAIN NAMES> [-f <FREQUENCY>]");
 		System.exit(1);
 	}
 	
 	public static String getWanIp() 
 	{
+		if (m_testip != null)
+			return m_testip;
+		
 		BufferedReader in = null;
         String retVal = null;
 
