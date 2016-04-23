@@ -23,16 +23,15 @@ public class DynDNSClient {
 		
 		for (int i = 0; i < args.length; i++)
 		{
-			if (args[i].equals("-d") && i < args.length)
+			if (args[i].equals("-d") && ++i < args.length)
 			{
-				domainNamesArg = args[i+1];
+				domainNamesArg = args[i];
 			}
-			
-			if (args[i].equals("-f") && i < args.length)
+			else if (args[i].equals("-f") && ++i < args.length)
 			{
 				try
 				{
-					frequencyInMins = Integer.parseInt(args[i+1]);
+					frequencyInMins = Integer.parseInt(args[i]);
 				}
 				catch (NumberFormatException e)
 				{
@@ -40,11 +39,14 @@ public class DynDNSClient {
 					usage();
 				}
 			}
-			
 			//for testing, so not printed by usage()
-			if (args[i].equals("-i") && i < args.length)
+			else if (args[i].equals("-i") && ++i < args.length)
 			{
-				m_testip = args[i+1];
+				m_testip = args[i];
+			}
+			else
+			{
+				usage();
 			}
 		}
 		
@@ -53,7 +55,7 @@ public class DynDNSClient {
 			usage();
 		}
 		
-		String[] domainNames = domainNamesArg.split(";");
+		String[] domainNames = domainNamesArg.split(",");
 		
 		
 		String lastIP = null;	//cached old IP

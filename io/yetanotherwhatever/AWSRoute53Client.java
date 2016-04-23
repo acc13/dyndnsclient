@@ -40,13 +40,13 @@ public class AWSRoute53Client implements IDNSManagementClient {
 		m_r53 = new AmazonRoute53Client(new BasicAWSCredentials(accessKey, secretKey));
 	}
 	
-	private List<ResourceRecordSet> findResourceRecordSets(String hzID)
+	private List<ResourceRecordSet> findResourceRecordSets(String hostZoneID)
 	{
-		ListResourceRecordSetsRequest lrrReq = new ListResourceRecordSetsRequest(hzID);
+		ListResourceRecordSetsRequest lrrReq = new ListResourceRecordSetsRequest(hostZoneID);
 		ListResourceRecordSetsResult lrrRes = m_r53.listResourceRecordSets(lrrReq);
 		List<ResourceRecordSet> rrsList = lrrRes.getResourceRecordSets();
 
-		logger.debug("Resource record set found for hosted zone id " + hzID + ": " + rrsList);
+		logger.debug("Resource record set found for hosted zone id " + hostZoneID + ": " + rrsList);
 		
 		return rrsList;
 	}
@@ -96,11 +96,7 @@ public class AWSRoute53Client implements IDNSManagementClient {
 			return;
 		}
 		
-		//add DNS root zone
-		if (!recordName.endsWith("."))
-		{
-			recordName += ".";
-		}
+		recordName = normalizeDomainName(recordName);
 		
 		//extract second level domain
 		int indexTLD = recordName.lastIndexOf('.', recordName.length() - 2);	//ignore root level "dot" domain
@@ -174,6 +170,15 @@ public class AWSRoute53Client implements IDNSManagementClient {
 		
 		//update record
 		changeResourceRecord(hzID, updateRRS);
+	}
+
+	private String normalizeDomainName(String recordName) {
+		//add DNS root zone
+		if (!recordName.endsWith("."))
+		{
+			recordName += ".";
+		}
+		return recordName;
 	}
 	
 	private void changeResourceRecord(String zoneID, ResourceRecordSet rrs)
